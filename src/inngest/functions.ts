@@ -1,5 +1,8 @@
-import { inngest } from "./client";
+import { inngest } from "@/inngest/client";
+import { resend } from "@/resend/client";
 import { sql } from "@vercel/postgres";
+
+import { EmailTemplate } from "@/components/email-template";
 
 export const hourlyCheck = inngest.createFunction(
   { name: "hourly-check" },
@@ -20,6 +23,13 @@ export const hourlyCheck = inngest.createFunction(
       }));
 
       await step.sendEvent(events);
+
+      await resend.emails.send({
+        from: process.env.EMAIL_FROM!,
+        to: [process.env.EMAIL_TO!],
+        subject: process.env.EMAIL_SUBJECT!,
+        react: EmailTemplate({ stories: [] }) as React.ReactElement,
+      });
     }
 
     return { event, body: { jobStories, postIds } };
