@@ -3,8 +3,14 @@ import { env } from "@/env.mjs";
 import { inngest } from "@/inngest/client";
 import { resend } from "@/resend/client";
 import { sql } from "@vercel/postgres";
+import { z } from "zod";
 
 import { EmailTemplate } from "@/components/email-template";
+
+interface Event {
+  name: string;
+  data: { storyId: number };
+}
 
 export const hourlyCheck = inngest.createFunction(
   { name: "hourly-check" },
@@ -13,26 +19,31 @@ export const hourlyCheck = inngest.createFunction(
     const request = await fetch(
       "https://hacker-news.firebaseio.com/v0/jobstories.json"
     );
-    const jobStories = await request.json();
+    const jobStories = await z
+      .array(z.number())
+      .parseAsync(await request.json());
 
     const postIds = await sql<{ postId: number }>`SELECT postId FROM posts`;
 
-    if (postIds.rowCount > 0) {
-    } else {
-      const events = jobStories.map((storyId: number) => ({
-        name: "process-story",
-        data: { storyId },
-      }));
+    const events = (
+      postIds.rowCount === 0
+        ? jobStories
+        : jobStories.filter((storyId: number) => {
+            return postIds.rows.find((post) => post.postId !== storyId);
+          })
+    ).map((storyId: number) => ({
+      name: "process-story",
+      data: { storyId },
+    }));
 
-      await step.sendEvent(events);
+    await step.sendEvent(events);
 
-      await resend.emails.send({
-        from: env.EMAIL_FROM,
-        to: [env.EMAIL_TO],
-        subject: env.EMAIL_SUBJECT,
-        react: EmailTemplate({ stories: [] }) as React.ReactElement,
-      });
-    }
+    await resend.emails.send({
+      from: `${env.EMAIL_FROM_NAME} <${env.EMAIL_FROM}>`,
+      to: [env.EMAIL_TO],
+      subject: env.EMAIL_SUBJECT,
+      react: EmailTemplate({ stories: [] }) as React.ReactElement,
+    });
 
     return { event, body: { jobStories, postIds } };
   }
