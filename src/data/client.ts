@@ -12,9 +12,9 @@ export const db = drizzle(sql);
 
 export const Posts = pgTable("posts", {
   id: serial("id").primaryKey(),
-  postId: integer("postId").notNull(),
+  postId: integer("postid").notNull(),
   title: varchar("title", { length: 255 }).notNull(),
   url: varchar("url", { length: 255 }).notNull(),
-  publishedAt: timestamp("publishedAt").notNull(),
-  createdAt: timestamp("createdAt").notNull().defaultNow(),
+  publishedAt: timestamp("publishedat").notNull(),
+  createdAt: timestamp("createdat").notNull().defaultNow(),
 });
