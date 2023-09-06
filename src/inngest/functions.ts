@@ -2,7 +2,8 @@ import { env } from "@/env.mjs";
 
 import { inngest } from "@/inngest/client";
 import { resend } from "@/resend/client";
-import { sql } from "@vercel/postgres";
+import { db, Posts } from "@/data/client";
+import { inArray } from "drizzle-orm";
 import { z } from "zod";
 
 import { EmailTemplate } from "@/components/email-template";
@@ -11,41 +12,63 @@ export const hourlyCheck = inngest.createFunction(
   { name: "hourly-check" },
   { event: "hourly-check" },
   async ({ event, step }) => {
-    const request = await fetch(
-      "https://hacker-news.firebaseio.com/v0/jobstories.json"
+    const jobStories = await step.run(
+      "Fetch Stories from Hacker News",
+      async () => {
+        const request = await fetch(
+          "https://hacker-news.firebaseio.com/v0/jobstories.json"
+        );
+        return await z.array(z.number()).parseAsync(await request.json());
+      }
     );
-    const jobStories = await z
-      .array(z.number())
-      .parseAsync(await request.json());
 
-    const postIds = await sql<{ postid: number }>`SELECT postId FROM posts`;
+    const newStories = await step.run(
+      "Filter out stories already in database",
+      async () => {
+        const postIds = await db.select({ postId: Posts.postId }).from(Posts);
 
-    const events = (
-      postIds.rowCount === 0
-        ? jobStories
-        : jobStories.filter((storyId: number) =>
-            postIds.rows.findIndex((post) => {
-              return post.postid === storyId;
-            }) < 0
-              ? true
-              : false
-          )
-    ).map((storyId: number) => ({
-      name: "process-story",
-      data: { storyId },
-    }));
+        return postIds.length === 0
+          ? jobStories
+          : jobStories.filter((storyId: number) =>
+              postIds.findIndex((post) => {
+                return post.postId === storyId;
+              }) < 0
+                ? true
+                : false
+            );
+      }
+    );
 
-    if (events.length > 0) {
+    if (newStories.length > 0) {
+      const events = newStories.map((storyId: number) => ({
+        name: "process-story",
+        data: { storyId },
+      }));
+
       await step.sendEvent(events);
+
+      await step.sleep(1000 * 30);
+
+      const results = await step.run(
+        "Fetch Details of New Stories from the DB",
+        async () => {
+          return await db
+            .select()
+            .from(Posts)
+            .where(inArray(Posts.postId, newStories));
+        }
+      );
+
+      await step.run("Send Email", async () => {
+        await resend.emails.send({
+          from: `${env.EMAIL_FROM_NAME} <${env.EMAIL_FROM}>`,
+          to: [env.EMAIL_TO],
+          subject: env.EMAIL_SUBJECT,
+          react: EmailTemplate({ stories: results }) as React.ReactElement,
+        });
+      });
     }
 
-    // await resend.emails.send({
-    //   from: `${env.EMAIL_FROM_NAME} <${env.EMAIL_FROM}>`,
-    //   to: [env.EMAIL_TO],
-    //   subject: env.EMAIL_SUBJECT,
-    //   react: EmailTemplate({ stories: [] }) as React.ReactElement,
-    // });
-
-    return { event, body: { jobStories, postIds } };
+    return { event, body: { newStories } };
   }
 );
