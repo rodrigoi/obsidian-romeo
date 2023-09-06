@@ -11,7 +11,9 @@ export const EmailTemplate: React.FC<Readonly<EmailTemplateProps>> = ({
     <p>New Hacker News Job Stories</p>
     <ul>
       {stories.map((story) => (
-        <li key={story.id}>story.title</li>
+        <li key={story.id}>
+          <a href={story.url}>{story.title}</a>
+        </li>
       ))}
     </ul>
   </div>
