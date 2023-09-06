@@ -3,14 +3,14 @@ import { env } from "@/env.mjs";
 import { inngest } from "@/inngest/client";
 import { resend } from "@/resend/client";
 import { db, Posts } from "@/data/client";
-import { inArray } from "drizzle-orm";
+import { desc, inArray } from "drizzle-orm";
 import { z } from "zod";
 
 import { EmailTemplate } from "@/components/email-template";
 
 export const hourlyCheck = inngest.createFunction(
   { name: "hourly-check" },
-  { event: "hourly-check" },
+  { cron: "0 * * * *" },
   async ({ event, step }) => {
     const jobStories = await step.run(
       "Fetch Stories from Hacker News",
@@ -55,7 +55,8 @@ export const hourlyCheck = inngest.createFunction(
           return await db
             .select()
             .from(Posts)
-            .where(inArray(Posts.postId, newStories));
+            .where(inArray(Posts.postId, newStories))
+            .orderBy(desc(Posts.publishedAt));
         }
       );
 
