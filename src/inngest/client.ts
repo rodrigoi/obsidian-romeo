@@ -1,3 +1,3 @@
 import { Inngest } from "inngest";
 
-export const inngest = new Inngest({ name: "onsidian-romeo" });
+export const inngest = new Inngest({ name: "obsidian-romeo" });

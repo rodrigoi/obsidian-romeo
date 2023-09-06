@@ -1,6 +1,7 @@
 import { serve } from "inngest/next";
 import { inngest } from "@/inngest/client";
 
-import { hourlyCheck, processStory } from "@/inngest/functions";
+import { hourlyCheck } from "@/inngest/functions";
+import { processStory } from "@/inngest/process-story";
 
 export const { GET, POST, PUT } = serve(inngest, [hourlyCheck, processStory]);
