@@ -1,5 +1,5 @@
 import { inngest } from "@/inngest/client";
-import { db, Posts } from "@/data/client";
+import { db, posts } from "@/data";
 import { sql } from "drizzle-orm";
 import { z } from "zod";
 
@@ -25,7 +25,7 @@ export const processStory = inngest.createFunction(
 
     const result = await step.run("Insert Story into Database", async () => {
       const { id, title, url, time } = story;
-      return await db.insert(Posts).values({
+      return await db.insert(posts).values({
         postId: id,
         title,
         url: url ?? `https://news.ycombinator.com/item?id=${id}`,

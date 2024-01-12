@@ -2,7 +2,7 @@ import { env } from "@/env.mjs";
 
 import { inngest } from "@/inngest/client";
 import { resend } from "@/resend/client";
-import { db, Posts } from "@/data/client";
+import { db, posts } from "@/data";
 import { desc, inArray } from "drizzle-orm";
 import { z } from "zod";
 
@@ -25,7 +25,7 @@ export const hourlyCheck = inngest.createFunction(
     const newStories = await step.run(
       "Filter out stories already in database",
       async () => {
-        const postIds = await db.select({ postId: Posts.postId }).from(Posts);
+        const postIds = await db.select({ postId: posts.postId }).from(posts);
 
         return postIds.length === 0
           ? jobStories
@@ -54,9 +54,9 @@ export const hourlyCheck = inngest.createFunction(
         async () => {
           return await db
             .select()
-            .from(Posts)
-            .where(inArray(Posts.postId, newStories))
-            .orderBy(desc(Posts.publishedAt));
+            .from(posts)
+            .where(inArray(posts.postId, newStories))
+            .orderBy(desc(posts.publishedAt));
         }
       );
 

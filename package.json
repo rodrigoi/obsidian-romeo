@@ -6,23 +6,33 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "inngest": "pnpm dlx inngest-cli@latest dev",
+    "db:proxy": "docker run -p 5433:80 --env APPEND_PORT=postgres:5432 --env ALLOW_ADDR_REGEX=.* --env LOG_TRAFFIC=true --name wsproxy ghcr.io/neondatabase/wsproxy:latest",
+    "db:push": "bun run drizzle-kit push:pg",
+    "db:generate": "bun run drizzle-kit generate:pg"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^0.7.2",
     "@t3-oss/env-nextjs": "^0.6.1",
     "@types/node": "20.5.9",
     "@types/react": "18.2.21",
     "@types/react-dom": "18.2.7",
     "@vercel/postgres": "^0.4.1",
-    "drizzle-orm": "^0.28.5",
+    "drizzle-orm": "^0.29.3",
     "eslint": "8.48.0",
     "eslint-config-next": "13.4.19",
     "inngest": "^2.6.0",
-    "next": "13.4.19",
+    "next": "14.0.4",
     "react": "18.2.0",
     "react-dom": "18.2.0",
-    "resend": "^1.0.0",
+    "resend": "^2.1.0",
     "typescript": "5.2.2",
     "zod": "^3.22.2"
+  },
+  "devDependencies": {
+    "dotenv": "^16.3.1",
+    "drizzle-kit": "^0.20.10",
+    "postgres": "^3.4.3"
   }
 }
