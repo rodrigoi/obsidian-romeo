@@ -11,7 +11,7 @@ const storySchema = z.object({
 });
 
 export const processStory = inngest.createFunction(
-  { name: "process-story", concurrency: 5 },
+  { id: "process-story", name: "Process Hackernews Story", concurrency: 5 },
   { event: "process-story" },
   async ({ event, step }) => {
     const storyId = event.data.storyId;

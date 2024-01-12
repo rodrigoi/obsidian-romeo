@@ -9,7 +9,7 @@ import { z } from "zod";
 import { EmailTemplate } from "@/components/email-template";
 
 export const hourlyCheck = inngest.createFunction(
-  { name: "hourly-check" },
+  { id: "hourly-check", name: "Hourly Check" },
   { cron: "0 * * * *" },
   async ({ event, step }) => {
     const jobStories = await step.run(
@@ -45,9 +45,9 @@ export const hourlyCheck = inngest.createFunction(
         data: { storyId },
       }));
 
-      await step.sendEvent(events);
+      await step.sendEvent("process-stories", events);
 
-      await step.sleep(1000 * 30);
+      await step.sleep("wait-for-stories-to-complete", 1000 * 30);
 
       const results = await step.run(
         "Fetch Details of New Stories from the DB",
