@@ -1,19 +1,26 @@
-import { env } from "@/env.mjs";
+import { sql } from "drizzle-orm";
+import { z } from "zod";
 
 import { inngest } from "@/inngest/client";
 import { resend } from "@/resend/client";
 import { db, posts } from "@/data";
-import { desc, inArray } from "drizzle-orm";
-import { z } from "zod";
+import { NewItemsNotification } from "@/emails/new-items-notification";
 
-import { EmailTemplate } from "@/components/email-template";
+import { env } from "@/env.mjs";
 
-export const hourlyCheck = inngest.createFunction(
-  { id: "hourly-check", name: "Hourly Check" },
+const storySchema = z.object({
+  id: z.number(),
+  title: z.string(),
+  url: z.string().optional(),
+  time: z.number(),
+});
+
+export const hackernewsCheck = inngest.createFunction(
+  { id: "hourly-check", name: "check hackernews" },
   { cron: "0 * * * *" },
-  async ({ event, step }) => {
-    const jobStories = await step.run(
-      "Fetch Stories from Hacker News",
+  async ({ step }) => {
+    const storiesIds = await step.run(
+      "fetch story IDs from hackernews",
       async () => {
         const request = await fetch(
           "https://hacker-news.firebaseio.com/v0/jobstories.json"
@@ -22,54 +29,63 @@ export const hourlyCheck = inngest.createFunction(
       }
     );
 
-    const newStories = await step.run(
-      "Filter out stories already in database",
-      async () => {
-        const postIds = await db.select({ postId: posts.postId }).from(posts);
+    const newStoriesIds = await step.run("find new stories", async () => {
+      const postIds = await db.select({ postId: posts.postId }).from(posts);
 
-        return postIds.length === 0
-          ? jobStories
-          : jobStories.filter((storyId: number) =>
-              postIds.findIndex((post) => {
-                return post.postId === storyId;
-              }) < 0
-                ? true
-                : false
-            );
-      }
-    );
+      return postIds.length === 0
+        ? storiesIds
+        : storiesIds.filter((storyId: number) =>
+            postIds.findIndex((post) => {
+              return post.postId === storyId;
+            }) < 0
+              ? true
+              : false
+          );
+    });
 
-    if (newStories.length > 0) {
-      const events = newStories.map((storyId: number) => ({
-        name: "process-story",
-        data: { storyId },
-      }));
-
-      await step.sendEvent("process-stories", events);
-
-      await step.sleep("wait-for-stories-to-complete", 1000 * 30);
-
-      const results = await step.run(
-        "Fetch Details of New Stories from the DB",
-        async () => {
-          return await db
-            .select()
-            .from(posts)
-            .where(inArray(posts.postId, newStories))
-            .orderBy(desc(posts.publishedAt));
-        }
-      );
-
-      await step.run("Send Email", async () => {
-        await resend.emails.send({
-          from: `${env.EMAIL_FROM_NAME} <${env.EMAIL_FROM}>`,
-          to: [env.EMAIL_TO],
-          subject: env.EMAIL_SUBJECT,
-          react: EmailTemplate({ stories: results }) as React.ReactElement,
-        });
-      });
+    if (newStoriesIds.length === 0) {
+      return;
     }
 
-    return { event, body: { newStories } };
+    const parsedStories = await Promise.all(
+      newStoriesIds.map((storyId: number) =>
+        step.run(
+          `fetch story details from hacernews for Id ${storyId}`,
+          async () => {
+            const request = await fetch(
+              `https://hacker-news.firebaseio.com/v0/item/${storyId}.json`
+            );
+            return await storySchema.parseAsync(await request.json());
+          }
+        )
+      )
+    );
+
+    const stories = await step.run("normalize stories data", () =>
+      parsedStories.map(({ url, ...rest }) => ({
+        ...rest,
+        url: url ?? `https://news.ycombinator.com/item?id=${rest.id}`,
+      }))
+    );
+
+    await step.run("save stories to the database", async () => {
+      await db.insert(posts).values(
+        stories.map(({ id, title, url, time }) => ({
+          postId: id,
+          title,
+          url,
+          publishedAt: sql`to_timestamp(${time})`,
+        }))
+      );
+    });
+
+    await step.run("send notification email", async () => {
+      await resend.emails.send({
+        from: `${env.EMAIL_FROM_NAME} <${env.EMAIL_FROM}>`,
+        to: [env.EMAIL_TO],
+        subject: env.EMAIL_SUBJECT,
+        react: NewItemsNotification({ stories }) as React.ReactElement,
+      });
+    });
   }
 );

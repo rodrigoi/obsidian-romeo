@@ -8,6 +8,27 @@
       "when": 1705067723441,
       "tag": "0000_productive_punisher",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1707165808533,
+      "tag": "0001_numerous_blindfold",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1707167220035,
+      "tag": "0002_natural_kid_colt",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1707169378416,
+      "tag": "0003_parallel_human_fly",
+      "breakpoints": true
     }
   ]
 }
