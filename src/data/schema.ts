@@ -8,7 +8,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { type InferSelectModel, type InferInsertModel } from "drizzle-orm";
 
-export const posts = pgTable("posts", {
+export const hackernews = pgTable("hackernews", {
   id: serial("id").primaryKey(),
   postId: integer("postid").notNull(),
   title: varchar("title", { length: 255 }).notNull(),

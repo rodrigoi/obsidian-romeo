@@ -3,20 +3,27 @@ import { z } from "zod";
 
 import { inngest } from "@/inngest/client";
 import { resend } from "@/resend/client";
-import { db, posts } from "@/data";
+import { db, hackernews } from "@/data";
 import { NewItemsNotification } from "@/emails/new-items-notification";
 
 import { env } from "@/env.mjs";
 
-const storySchema = z.object({
-  id: z.number(),
-  title: z.string(),
-  url: z.string().optional(),
-  time: z.number(),
-});
+const storySchema = z
+  .object({
+    id: z.number(),
+    title: z.string(),
+    url: z.string().optional(),
+    time: z.number(),
+  })
+  .transform((value, ctx) => ({
+    id: value.id,
+    title: value.title,
+    url: value.url ?? `https://news.ycombinator.com/item?id=${value.id}`,
+    time: value.time,
+  }));
 
 export const hackernewsCheck = inngest.createFunction(
-  { id: "hourly-check", name: "check hackernews" },
+  { id: "hackernews-check", name: "check hackernews" },
   { cron: "0 * * * *" },
   async ({ step }) => {
     const storiesIds = await step.run(
@@ -30,7 +37,9 @@ export const hackernewsCheck = inngest.createFunction(
     );
 
     const newStoriesIds = await step.run("find new stories", async () => {
-      const postIds = await db.select({ postId: posts.postId }).from(posts);
+      const postIds = await db
+        .select({ postId: hackernews.postId })
+        .from(hackernews);
 
       return postIds.length === 0
         ? storiesIds
@@ -47,10 +56,10 @@ export const hackernewsCheck = inngest.createFunction(
       return;
     }
 
-    const parsedStories = await Promise.all(
+    const stories = await Promise.all(
       newStoriesIds.map((storyId: number) =>
         step.run(
-          `fetch story details from hacernews for Id ${storyId}`,
+          `fetch story details from hackernews for Id ${storyId}`,
           async () => {
             const request = await fetch(
               `https://hacker-news.firebaseio.com/v0/item/${storyId}.json`
@@ -61,21 +70,16 @@ export const hackernewsCheck = inngest.createFunction(
       )
     );
 
-    const stories = await step.run("normalize stories data", () =>
-      parsedStories.map(({ url, ...rest }) => ({
-        ...rest,
-        url: url ?? `https://news.ycombinator.com/item?id=${rest.id}`,
-      }))
-    );
-
     await step.run("save stories to the database", async () => {
-      await db.insert(posts).values(
-        stories.map(({ id, title, url, time }) => ({
-          postId: id,
-          title,
-          url,
-          publishedAt: sql`to_timestamp(${time})`,
-        }))
+      await db.insert(hackernews).values(
+        stories
+          .map(({ id, title, url, time }) => ({
+            postId: id,
+            title,
+            url,
+            publishedAt: sql`to_timestamp(${time})`,
+          }))
+          .reverse()
       );
     });
 
