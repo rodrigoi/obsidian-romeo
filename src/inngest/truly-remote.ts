@@ -86,28 +86,26 @@ export const trulyRemoteCheck = inngest.createFunction(
           .select({ listingId: trulyRemote.listingId })
           .from(trulyRemote);
 
-        const newDevelopmentListings = developmentListings.filter(
-          ({ listingId }) =>
-            listingIds.findIndex((listing) => listing.listingId === listingId) <
-            0
+        const listingIdSet = new Set(
+          listingIds.map((listing) => listing.listingId)
         );
 
-        const newMarketingListings = marketingListings.filter(
-          ({ listingId }) =>
-            listingIds.findIndex((listing) => listing.listingId === listingId) <
-            0
-        );
-
-        const newProductListings = productListings.filter(
-          ({ listingId }) =>
-            listingIds.findIndex((listing) => listing.listingId === listingId) <
-            0
-        );
+        const newListings = [
+          ...developmentListings,
+          ...marketingListings,
+          ...productListings,
+        ].filter(({ listingId }) => !listingIdSet.has(listingId));
 
         return [
-          newDevelopmentListings,
-          newMarketingListings,
-          newProductListings,
+          newListings.filter(
+            ({ category }) => category.toLowerCase() === "development"
+          ),
+          newListings.filter(
+            ({ category }) => category.toLowerCase() === "marketing"
+          ),
+          newListings.filter(
+            ({ category }) => category.toLowerCase() === "product"
+          ),
         ];
       }
     );

@@ -41,12 +41,9 @@ export const hackernewsCheck = inngest.createFunction(
         .select({ postId: hackernews.postId })
         .from(hackernews);
 
-      return postIds.length === 0
-        ? storiesIds
-        : storiesIds.filter(
-            (storyId: number) =>
-              postIds.findIndex((post) => post.postId === storyId) < 0
-          );
+      const postIdsSet = new Set(postIds.map(({ postId }) => postId));
+
+      return storiesIds.filter((postId) => !postIdsSet.has(postId));
     });
 
     if (newStoriesIds.length === 0) {
