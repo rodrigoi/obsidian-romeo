@@ -24,7 +24,7 @@ const trulyRemoteResponseSchema = z
       })
     ),
   })
-  .transform((value, ctx) => {
+  .transform((value) => {
     return value.records.map((record) => {
       return {
         listingId: record.fields.listingID,
@@ -39,10 +39,12 @@ const trulyRemoteResponseSchema = z
     });
   });
 
+type TrulyRemoteListings = z.output<typeof trulyRemoteResponseSchema>;
+
 export const trulyRemoteCheck = inngest.createFunction(
   { id: "truly-remote", name: "TrulyRemote.co" },
   { cron: "0 * * * * " },
-  async ({ event, step }) => {
+  async ({ step }) => {
     const [developmentListings, marketingListings, productListings] =
       await step.run("Fetch Posts from TrulyRemote.co", async () => {
         const results = await Promise.all([
@@ -106,7 +108,7 @@ export const trulyRemoteCheck = inngest.createFunction(
           newListings.filter(
             ({ category }) => category.toLowerCase() === "product"
           ),
-        ];
+        ] as TrulyRemoteListings[];
       }
     );
 

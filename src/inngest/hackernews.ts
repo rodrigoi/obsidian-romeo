@@ -15,12 +15,14 @@ const storySchema = z
     url: z.string().optional(),
     time: z.number(),
   })
-  .transform((value, ctx) => ({
+  .transform((value) => ({
     id: value.id,
     title: value.title,
     url: value.url ?? `https://news.ycombinator.com/item?id=${value.id}`,
     time: value.time,
   }));
+
+type HackerNewsStory = z.output<typeof storySchema>;
 
 export const hackernewsCheck = inngest.createFunction(
   { id: "hackernews-check", name: "check hackernews" },
