@@ -3,10 +3,12 @@ import {
   serial,
   integer,
   varchar,
+  text,
   timestamp,
 } from "drizzle-orm/pg-core";
+import { type InferSelectModel, type InferInsertModel } from "drizzle-orm";
 
-export const posts = pgTable("posts", {
+export const hackernews = pgTable("hackernews", {
   id: serial("id").primaryKey(),
   postId: integer("postid").notNull(),
   title: varchar("title", { length: 255 }).notNull(),
@@ -14,3 +16,18 @@ export const posts = pgTable("posts", {
   publishedAt: timestamp("publishedat").notNull(),
   createdAt: timestamp("createdat").notNull().defaultNow(),
 });
+
+export const trulyRemote = pgTable("trulyRemote", {
+  id: serial("id").primaryKey(),
+  listingId: integer("listingId").notNull(),
+  companyName: text("companyName").notNull(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  category: text("category").notNull(),
+  regions: text("regions"),
+  url: text("url").notNull(),
+  publishedAt: timestamp("publishedat").notNull(),
+  createdAt: timestamp("createdat").notNull().defaultNow(),
+});
+
+export type InsertTrulyRemote = InferInsertModel<typeof trulyRemote>;

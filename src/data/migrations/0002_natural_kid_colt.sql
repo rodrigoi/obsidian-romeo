@@ -1,0 +1,1 @@
+ALTER TABLE "trulyRemote" ADD COLUMN "description" text NOT NULL;

@@ -1,0 +1,1 @@
+ALTER TABLE "trulyRemote" ALTER COLUMN "regions" DROP NOT NULL;
