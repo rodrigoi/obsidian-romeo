@@ -22,7 +22,7 @@ export const trulyRemote = pgTable("trulyRemote", {
   listingId: integer("listingId").notNull(),
   companyName: text("companyName").notNull(),
   title: text("title").notNull(),
-  description: text("description").notNull(),
+  description: text("description"),
   category: text("category").notNull(),
   regions: text("regions"),
   url: text("url").notNull(),

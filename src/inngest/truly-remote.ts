@@ -15,7 +15,7 @@ const trulyRemoteResponseSchema = z
           listingID: z.number(),
           companyName: z.array(z.string()),
           role: z.string(),
-          listingSummary: z.string(),
+          listingSummary: z.optional(z.string()),
           roleCategory: z.array(z.string()),
           useListingRegions: z.optional(z.string()),
           roleApplyURL: z.string().url(),
