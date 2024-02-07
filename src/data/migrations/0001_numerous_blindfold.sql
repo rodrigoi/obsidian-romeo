@@ -4,8 +4,9 @@ CREATE TABLE IF NOT EXISTS "trulyRemote" (
 	"companyName" text NOT NULL,
 	"title" text NOT NULL,
 	"category" text NOT NULL,
-	"regions" text NOT NULL,
+	"regions" text,
 	"url" text NOT NULL,
+	"description" text NOT NULL,
 	"publishedat" timestamp NOT NULL,
 	"createdat" timestamp DEFAULT now() NOT NULL
 );

@@ -4,7 +4,7 @@ import { z } from "zod";
 import { inngest } from "@/inngest/client";
 import { resend } from "@/resend/client";
 import { db, hackernews } from "@/data";
-import { NewItemsNotification } from "@/emails/new-items-notification";
+import { HNNotification } from "@/emails/hn-notification";
 
 import { env } from "@/env.mjs";
 
@@ -43,12 +43,9 @@ export const hackernewsCheck = inngest.createFunction(
 
       return postIds.length === 0
         ? storiesIds
-        : storiesIds.filter((storyId: number) =>
-            postIds.findIndex((post) => {
-              return post.postId === storyId;
-            }) < 0
-              ? true
-              : false
+        : storiesIds.filter(
+            (storyId: number) =>
+              postIds.findIndex((post) => post.postId === storyId) < 0
           );
     });
 
@@ -88,7 +85,7 @@ export const hackernewsCheck = inngest.createFunction(
         from: `${env.EMAIL_FROM_NAME} <${env.EMAIL_FROM}>`,
         to: [env.EMAIL_TO],
         subject: env.EMAIL_SUBJECT,
-        react: NewItemsNotification({ stories }) as React.ReactElement,
+        react: HNNotification({ stories }) as React.ReactElement,
       });
     });
   }

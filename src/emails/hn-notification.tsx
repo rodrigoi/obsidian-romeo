@@ -1,18 +1,12 @@
 import * as React from "react";
 import {
   Body,
-  Button,
   Container,
-  Column,
   Head,
   Heading,
-  Hr,
   Html,
-  Img,
   Link,
   Preview,
-  Row,
-  Section,
   Text,
   Tailwind,
 } from "@react-email/components";
@@ -23,7 +17,7 @@ type HackerNewsStory = {
   title: string;
 };
 
-interface NewItemsNotificationProps {
+interface HNNotificationProps {
   stories: Array<HackerNewsStory>;
 }
 
@@ -47,12 +41,12 @@ const hackerNewsStories: Array<HackerNewsStory> = [
   },
 ];
 
-export const NewItemsNotification: React.FC<
-  Readonly<NewItemsNotificationProps>
-> = ({ stories = hackerNewsStories }) => (
+export const HNNotification: React.FC<Readonly<HNNotificationProps>> = ({
+  stories = [],
+}) => (
   <Html>
     <Head />
-    <Preview>Found new job offers to check.</Preview>
+    <Preview>Found new job offers from Hacker News to check.</Preview>
     <Tailwind>
       <Body className="bg-gray-200 font-sans p-3">
         <Container className="bg-white border-s-gray-500 p-3 rounded-md">
@@ -67,27 +61,10 @@ export const NewItemsNotification: React.FC<
               </Text>
             ))
           )}
-          <Heading as="h4">TrulyRemote.com</Heading>
-          <Text>There are no new Truly Remote Posts on any Category</Text>
-          <Section>
-            <Heading as="h5" className="m-0">
-              Development
-            </Heading>
-          </Section>
-          <Section>
-            <Heading as="h5" className="m-0">
-              Product
-            </Heading>
-          </Section>
-          <Section>
-            <Heading as="h5" className="m-0">
-              Marketing
-            </Heading>
-          </Section>
         </Container>
       </Body>
     </Tailwind>
   </Html>
 );
 
-export default NewItemsNotification;
+export default HNNotification;
