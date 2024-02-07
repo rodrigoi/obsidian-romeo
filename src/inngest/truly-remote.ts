@@ -112,6 +112,14 @@ export const trulyRemoteCheck = inngest.createFunction(
       }
     );
 
+    if (
+      development.length === 0 &&
+      marketing.length === 0 &&
+      product.length === 0
+    ) {
+      return;
+    }
+
     await step.run("save listings to the database", async () => {
       await db.insert(trulyRemote).values(
         [...development, ...marketing, ...product]
