@@ -135,7 +135,7 @@ export const trulyRemoteCheck = inngest.createFunction(
       await resend.emails.send({
         from: `${env.EMAIL_FROM_NAME} <${env.EMAIL_FROM}>`,
         to: [env.EMAIL_TO],
-        subject: env.EMAIL_SUBJECT,
+        subject: "News TrulyRemote.co Job Postings from Obsidian Romeo!",
         react: TRNotification({
           development,
           marketing,

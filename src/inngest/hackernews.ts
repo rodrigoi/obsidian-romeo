@@ -83,7 +83,7 @@ export const hackernewsCheck = inngest.createFunction(
       await resend.emails.send({
         from: `${env.EMAIL_FROM_NAME} <${env.EMAIL_FROM}>`,
         to: [env.EMAIL_TO],
-        subject: env.EMAIL_SUBJECT,
+        subject: "News Hacker News Job Postings from Obsidian Romeo!",
         react: HNNotification({ stories }) as React.ReactElement,
       });
     });
