@@ -122,7 +122,7 @@ const TRCategoryListings = ({
   listings: Array<TRListing>;
 }) => (
   <Section>
-    <Heading as="h5" className="m-0 py-2">
+    <Heading as="h4" className="m-0 py-2">
       {section}
     </Heading>
     {listings.map((listing) => (
@@ -151,9 +151,15 @@ export const TRNotification: React.FC<Readonly<TRNotificationProps>> = ({
     <Tailwind>
       <Body className="bg-gray-200 font-sans p-3">
         <Container className="bg-white border border-solid border-gray-300 p-3 rounded-lg">
-          <Heading as="h4">New TrulyRemote.co Jobs!</Heading>
+          <Heading as="h3">New TrulyRemote.co Jobs!</Heading>
           {development.length > 0 && (
-            <TRCategoryListings section="Development" listings={development} />
+            <>
+              <Hr />
+              <TRCategoryListings
+                section="Development"
+                listings={development}
+              />
+            </>
           )}
           {marketing.length > 0 && (
             <>

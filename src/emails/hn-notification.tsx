@@ -58,11 +58,11 @@ export const HNNotification: React.FC<Readonly<HNNotificationProps>> = ({
     <Tailwind>
       <Body className="bg-gray-200 font-sans p-3">
         <Container className="bg-white border border-solid border-gray-300 p-3 rounded-lg">
-          <Heading as="h4">New Hacker News Job Stories!</Heading>
+          <Heading as="h3">New Hacker News Job Stories!</Heading>
           <Section>
             {stories.length > 0 &&
               stories.map((story) => (
-                <Row key={story.id} className="p-2">
+                <Row key={story.id} className="py-2">
                   <Text className="m-0">
                     <Link href={story.url}>{story.title}</Link>
                   </Text>
