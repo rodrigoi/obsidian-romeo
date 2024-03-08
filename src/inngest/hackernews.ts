@@ -1,3 +1,4 @@
+import { unstable_cache as cache, revalidateTag } from "next/cache";
 import { sql } from "drizzle-orm";
 import { z } from "zod";
 
@@ -24,6 +25,19 @@ const storySchema = z
 
 type HackerNewsStory = z.output<typeof storySchema>;
 
+/**
+ * get all stories from either cache or the database. Cache never expires an has
+ * to be revalidated if we save new stories.
+ */
+const getAllStories = cache(
+  async () => db.select({ postId: hackernews.postId }).from(hackernews),
+  ["hackernews-stories"],
+  {
+    revalidate: false,
+    tags: ["hackernews-stories"],
+  }
+);
+
 export const hackernewsCheck = inngest.createFunction(
   { id: "hackernews-check", name: "check hackernews" },
   { cron: "0 * * * *" },
@@ -39,15 +53,16 @@ export const hackernewsCheck = inngest.createFunction(
     );
 
     const newStoriesIds = await step.run("find new stories", async () => {
-      const postIds = await db
-        .select({ postId: hackernews.postId })
-        .from(hackernews);
+      const postIds = await getAllStories();
 
       const postIdsSet = new Set(postIds.map(({ postId }) => postId));
 
       return storiesIds.filter((postId) => !postIdsSet.has(postId));
     });
 
+    /**
+     * bail if there are no new stories to save.
+     */
     if (newStoriesIds.length === 0) {
       return;
     }
@@ -77,6 +92,9 @@ export const hackernewsCheck = inngest.createFunction(
           }))
           .reverse()
       );
+
+      // revalidate cache.
+      revalidateTag("hackernews-stories");
     });
 
     await step.run("send notification email", async () => {

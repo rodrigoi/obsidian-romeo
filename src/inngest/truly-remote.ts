@@ -1,3 +1,4 @@
+import { unstable_cache as cache, revalidateTag } from "next/cache";
 import { z } from "zod";
 
 import { inngest } from "@/inngest/client";
@@ -40,6 +41,19 @@ const trulyRemoteResponseSchema = z
   });
 
 type TrulyRemoteListings = z.output<typeof trulyRemoteResponseSchema>;
+
+/**
+ * get all listing ids either from db or from cache. Cache never expires and has to be revalidated
+ * if we add new listings.
+ */
+const getAllListings = cache(
+  async () => db.select({ listingId: trulyRemote.listingId }).from(trulyRemote),
+  ["truly-remote-listings"],
+  {
+    revalidate: false,
+    tags: ["truly-remote-listings"],
+  }
+);
 
 export const trulyRemoteCheck = inngest.createFunction(
   { id: "truly-remote", name: "TrulyRemote.co" },
@@ -84,9 +98,7 @@ export const trulyRemoteCheck = inngest.createFunction(
     const [development, marketing, product] = await step.run(
       "find new listings",
       async () => {
-        const listingIds = await db
-          .select({ listingId: trulyRemote.listingId })
-          .from(trulyRemote);
+        const listingIds = await getAllListings();
 
         const listingIdSet = new Set(
           listingIds.map((listing) => listing.listingId)
@@ -112,6 +124,9 @@ export const trulyRemoteCheck = inngest.createFunction(
       }
     );
 
+    /**
+     * bail if there a no new listings to save.
+     */
     if (
       development.length === 0 &&
       marketing.length === 0 &&
@@ -129,6 +144,8 @@ export const trulyRemoteCheck = inngest.createFunction(
           }))
           .reverse()
       );
+
+      revalidateTag("truly-remote-listings");
     });
 
     await step.run("send notification email", async () => {
