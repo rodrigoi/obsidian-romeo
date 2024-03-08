@@ -46,8 +46,8 @@ type TrulyRemoteListings = z.output<typeof trulyRemoteResponseSchema>;
  * get all listing ids either from db or from cache. Cache never expires and has to be revalidated
  * if we add new listings.
  */
-const getAllListings = cache(
-  async () => db.select({ listingId: trulyRemote.listingId }).from(trulyRemote),
+const getAllListingIds = cache(
+  () => db.select({ listingId: trulyRemote.listingId }).from(trulyRemote),
   ["truly-remote-listings"],
   {
     revalidate: false,
@@ -98,7 +98,7 @@ export const trulyRemoteCheck = inngest.createFunction(
     const [development, marketing, product] = await step.run(
       "find new listings",
       async () => {
-        const listingIds = await getAllListings();
+        const listingIds = await getAllListingIds();
 
         const listingIdSet = new Set(
           listingIds.map((listing) => listing.listingId)
