@@ -30,7 +30,13 @@ type HackerNewsStory = z.output<typeof storySchema>;
  * to be revalidated if we save new stories.
  */
 const getAllPostIds = cache(
-  () => db.select({ postId: hackernews.postId }).from(hackernews),
+  async () => {
+    const postIds = await db
+      .select({ postId: hackernews.postId })
+      .from(hackernews);
+
+    return postIds.map(({ postId }) => postId);
+  },
   ["hackernews-stories"],
   {
     revalidate: false,
@@ -53,11 +59,9 @@ export const hackernewsCheck = inngest.createFunction(
     );
 
     const newStoriesIds = await step.run("find new stories", async () => {
-      const postIds = await getAllPostIds();
-
-      const postIdsSet = new Set(postIds.map(({ postId }) => postId));
-
-      return storiesIds.filter((postId) => !postIdsSet.has(postId));
+      // get the existing posts Ids into a Set for easy searching.
+      const postIds = new Set(await getAllPostIds());
+      return storiesIds.filter((postId) => !postIds.has(postId));
     });
 
     /**

@@ -47,7 +47,13 @@ type TrulyRemoteListings = z.output<typeof trulyRemoteResponseSchema>;
  * if we add new listings.
  */
 const getAllListingIds = cache(
-  () => db.select({ listingId: trulyRemote.listingId }).from(trulyRemote),
+  async () => {
+    const listingIds = await db
+      .select({ listingId: trulyRemote.listingId })
+      .from(trulyRemote);
+
+    return listingIds.map(({ listingId }) => listingId);
+  },
   ["truly-remote-listings"],
   {
     revalidate: false,
@@ -98,17 +104,14 @@ export const trulyRemoteCheck = inngest.createFunction(
     const [development, marketing, product] = await step.run(
       "find new listings",
       async () => {
-        const listingIds = await getAllListingIds();
-
-        const listingIdSet = new Set(
-          listingIds.map((listing) => listing.listingId)
-        );
+        // get the existing listing Ids into a Set for easy searching.
+        const listingIds = new Set(await getAllListingIds());
 
         const newListings = [
           ...developmentListings,
           ...marketingListings,
           ...productListings,
-        ].filter(({ listingId }) => !listingIdSet.has(listingId));
+        ].filter(({ listingId }) => !listingIds.has(listingId));
 
         return [
           newListings.filter(
