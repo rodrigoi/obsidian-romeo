@@ -54,7 +54,7 @@ export const hackernewsCheck = inngest.createFunction(
         const request = await fetch(
           "https://hacker-news.firebaseio.com/v0/jobstories.json"
         );
-        return await z.array(z.number()).parseAsync(await request.json());
+        return z.array(z.number()).parse(await request.json());
       }
     );
 
@@ -79,7 +79,7 @@ export const hackernewsCheck = inngest.createFunction(
             const request = await fetch(
               `https://hacker-news.firebaseio.com/v0/item/${storyId}.json`
             );
-            return await storySchema.parseAsync(await request.json());
+            return storySchema.parse(await request.json());
           }
         )
       )

@@ -93,7 +93,7 @@ export const trulyRemoteCheck = inngest.createFunction(
 
         return await Promise.all(
           results.map(async (result) =>
-            trulyRemoteResponseSchema.parseAsync(await result.json())
+            trulyRemoteResponseSchema.parse(await result.json())
           )
         );
       });
