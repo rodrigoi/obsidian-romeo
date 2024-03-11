@@ -64,7 +64,7 @@ const getAllListingIds = cache(
 export const trulyRemoteCheck = inngest.createFunction(
   { id: "truly-remote", name: "TrulyRemote.co" },
   { cron: "0 * * * * " },
-  async ({ step }) => {
+  async ({ step, logger }) => {
     const [developmentListings, marketingListings, productListings] =
       await step.run("Fetch Posts from TrulyRemote.co", async () => {
         const results = await Promise.all([
@@ -92,9 +92,18 @@ export const trulyRemoteCheck = inngest.createFunction(
         ]);
 
         return await Promise.all(
-          results.map(async (result) =>
-            trulyRemoteResponseSchema.parse(await result.json())
-          )
+          results.map(async (result) => {
+            const parsedResult = trulyRemoteResponseSchema.safeParse(
+              await result.json()
+            );
+
+            if (!parsedResult.success) {
+              logger.error(parsedResult.error);
+              return [];
+            }
+
+            return parsedResult.data;
+          })
         );
       });
 
