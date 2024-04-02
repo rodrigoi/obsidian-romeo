@@ -8,8 +8,6 @@ import postgres from "postgres";
 
 import { env } from "@/env.mjs";
 
-neonConfig.fetchConnectionCache = true;
-
 export const db =
   process.env.NODE_ENV === "development"
     ? drizzlepg(postgres(env.POSTGRES_URL))
