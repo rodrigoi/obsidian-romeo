@@ -53,9 +53,9 @@ export const HNNotification: React.FC<Readonly<HNNotificationProps>> = ({
   stories = [],
 }) => (
   <Html>
-    <Head />
     <Preview>Found new job offers from Hacker News to check.</Preview>
     <Tailwind>
+      <Head />
       <Body className="bg-gray-200 font-sans p-3">
         <Container className="bg-white border border-solid border-gray-300 p-3 rounded-lg">
           <Heading as="h3">New Hacker News Job Stories!</Heading>

@@ -146,9 +146,9 @@ export const TRNotification: React.FC<Readonly<TRNotificationProps>> = ({
   product = [],
 }) => (
   <Html>
-    <Head />
     <Preview>Found new job offers on TrulyRemote.co to check.</Preview>
     <Tailwind>
+      <Head />
       <Body className="bg-gray-200 font-sans p-3">
         <Container className="bg-white border border-solid border-gray-300 p-3 rounded-lg">
           <Heading as="h3">New TrulyRemote.co Jobs!</Heading>
