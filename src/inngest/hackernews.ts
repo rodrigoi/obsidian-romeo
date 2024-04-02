@@ -39,13 +39,13 @@ const getAllPostIds = cache(
   },
   ["hackernews-stories"],
   {
-    revalidate: false,
+    revalidate: 7200,
     tags: ["hackernews-stories"],
   }
 );
 
 export const hackernewsCheck = inngest.createFunction(
-  { id: "hackernews-check", name: "check hackernews" },
+  { id: "hackernews-check", name: "Hackernews" },
   { cron: "0 * * * *" },
   async ({ step }) => {
     const storiesIds = await step.run(

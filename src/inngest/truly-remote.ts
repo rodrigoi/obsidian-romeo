@@ -56,7 +56,7 @@ const getAllListingIds = cache(
   },
   ["truly-remote-listings"],
   {
-    revalidate: false,
+    revalidate: 7200,
     tags: ["truly-remote-listings"],
   }
 );
