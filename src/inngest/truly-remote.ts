@@ -1,12 +1,11 @@
 import { unstable_cache as cache, revalidateTag } from "next/cache";
-import { z } from "zod";
+import { db, trulyRemote } from "@/data";
 
+import { TRNotification } from "@/emails/tr-notification";
+import { env } from "@/env.mjs";
 import { inngest } from "@/inngest/client";
 import { resend } from "@/resend/client";
-import { db, trulyRemote } from "@/data";
-import { TRNotification } from "@/emails/tr-notification";
-
-import { env } from "@/env.mjs";
+import { z } from "zod";
 
 const trulyRemoteResponseSchema = z
   .object({
@@ -43,6 +42,10 @@ const trulyRemoteResponseSchema = z
 type TrulyRemoteListings = z.output<typeof trulyRemoteResponseSchema>;
 
 /**
+ * agregar Business Sales y CustomerService
+ */
+
+/**
  * get all listing ids either from db or from cache. Cache never expires and has to be revalidated
  * if we add new listings.
  */
@@ -65,54 +68,83 @@ export const trulyRemoteCheck = inngest.createFunction(
   { id: "truly-remote", name: "TrulyRemote.co" },
   { cron: "0 * * * * " },
   async ({ step, logger }) => {
-    const [developmentListings, marketingListings, productListings] =
-      await step.run("Fetch Posts from TrulyRemote.co", async () => {
-        const results = await Promise.all([
-          fetch("https://trulyremote.co/api/getListing", {
-            method: "POST",
-            body: JSON.stringify({ locations: [], category: ["Development"] }),
-            headers: {
-              "Content-Type": "application/json",
-            },
+    const [
+      developmentListings,
+      marketingListings,
+      productListings,
+      businessListings,
+      salesListings,
+      customerServiceListings,
+    ] = await step.run("Fetch Posts from TrulyRemote.co", async () => {
+      const results = await Promise.all([
+        fetch("https://trulyremote.co/api/getListing", {
+          method: "POST",
+          body: JSON.stringify({ locations: [], category: ["Development"] }),
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }),
+        fetch("https://trulyremote.co/api/getListing", {
+          method: "POST",
+          body: JSON.stringify({ locations: [], category: ["Marketing"] }),
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }),
+        fetch("https://trulyremote.co/api/getListing", {
+          method: "POST",
+          body: JSON.stringify({ locations: [], category: ["Product"] }),
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }),
+        fetch("https://trulyremote.co/api/getListing", {
+          method: "POST",
+          body: JSON.stringify({ locations: [], category: ["Business"] }),
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }),
+        fetch("https://trulyremote.co/api/getListing", {
+          method: "POST",
+          body: JSON.stringify({ locations: [], category: ["Sales"] }),
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }),
+        fetch("https://trulyremote.co/api/getListing", {
+          method: "POST",
+          body: JSON.stringify({
+            locations: [],
+            category: ["Customer Service"],
           }),
-          fetch("https://trulyremote.co/api/getListing", {
-            method: "POST",
-            body: JSON.stringify({ locations: [], category: ["Marketing"] }),
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }),
-          fetch("https://trulyremote.co/api/getListing", {
-            method: "POST",
-            body: JSON.stringify({ locations: [], category: ["Product"] }),
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }),
-        ]);
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }),
+      ]);
 
-        return await Promise.all(
-          results.map(async (result) => {
-            const parsedResult = trulyRemoteResponseSchema.safeParse(
-              await result.json()
-            );
+      return await Promise.all(
+        results.map(async (result) => {
+          const parsedResult = trulyRemoteResponseSchema.safeParse(
+            await result.json()
+          );
 
-            if (!parsedResult.success) {
-              logger.error(parsedResult.error);
-              return [];
-            }
+          if (!parsedResult.success) {
+            logger.error(parsedResult.error);
+            return [];
+          }
 
-            return parsedResult.data;
-          })
-        );
-      });
+          return parsedResult.data;
+        })
+      );
+    });
 
     /**
      * this needs another look, but works for now
      */
-    const [development, marketing, product] = await step.run(
-      "find new listings",
-      async () => {
+    const [development, marketing, product, business, sales, customerService] =
+      await step.run("find new listings", async () => {
         // get the existing listing Ids into a Set for easy searching.
         const listingIds = new Set(await getAllListingIds());
 
@@ -120,6 +152,9 @@ export const trulyRemoteCheck = inngest.createFunction(
           ...developmentListings,
           ...marketingListings,
           ...productListings,
+          ...businessListings,
+          ...salesListings,
+          ...customerServiceListings,
         ].filter(({ listingId }) => !listingIds.has(listingId));
 
         return [
@@ -133,9 +168,17 @@ export const trulyRemoteCheck = inngest.createFunction(
           newListings.filter(
             ({ category }) => category.toLowerCase() === "product"
           ),
+          newListings.filter(
+            ({ category }) => category.toLowerCase() === "business"
+          ),
+          newListings.filter(
+            ({ category }) => category.toLowerCase() === "sales"
+          ),
+          newListings.filter(
+            ({ category }) => category.toLowerCase() === "customer service"
+          ),
         ] as TrulyRemoteListings[];
-      }
-    );
+      });
 
     /**
      * bail if there a no new listings to save.
@@ -143,14 +186,24 @@ export const trulyRemoteCheck = inngest.createFunction(
     if (
       development.length === 0 &&
       marketing.length === 0 &&
-      product.length === 0
+      product.length === 0 &&
+      business.length === 0 &&
+      sales.length === 0 &&
+      customerService.length === 0
     ) {
       return;
     }
 
     await step.run("save listings to the database", async () => {
       await db.insert(trulyRemote).values(
-        [...development, ...marketing, ...product]
+        [
+          ...development,
+          ...marketing,
+          ...product,
+          ...business,
+          ...sales,
+          ...customerService,
+        ]
           .map((post) => ({
             ...post,
             publishedAt: new Date(post.publishedAt),
@@ -170,6 +223,9 @@ export const trulyRemoteCheck = inngest.createFunction(
           development,
           marketing,
           product,
+          business,
+          sales,
+          customerService,
         }) as React.ReactElement,
       });
     });

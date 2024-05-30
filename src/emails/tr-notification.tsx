@@ -30,6 +30,9 @@ interface TRNotificationProps {
   development: Array<TRListing>;
   marketing: Array<TRListing>;
   product: Array<TRListing>;
+  business: Array<TRListing>;
+  sales: Array<TRListing>;
+  customerService: Array<TRListing>;
 }
 
 const developmentListings: Array<TRListing> = [
@@ -143,6 +146,9 @@ export const TRNotification: React.FC<Readonly<TRNotificationProps>> = ({
   development = [],
   marketing = [],
   product = [],
+  business = [],
+  sales = [],
+  customerService = [],
 }) => (
   <Html>
     <Preview>Found new job offers on TrulyRemote.co to check.</Preview>
@@ -170,6 +176,27 @@ export const TRNotification: React.FC<Readonly<TRNotificationProps>> = ({
             <>
               <Hr />
               <TRCategoryListings section="Product" listings={product} />
+            </>
+          )}
+          {business.length > 0 && (
+            <>
+              <Hr />
+              <TRCategoryListings section="Business" listings={business} />
+            </>
+          )}
+          {sales.length > 0 && (
+            <>
+              <Hr />
+              <TRCategoryListings section="Sales" listings={sales} />
+            </>
+          )}
+          {customerService.length > 0 && (
+            <>
+              <Hr />
+              <TRCategoryListings
+                section="Cuscustomer Service"
+                listings={customerService}
+              />
             </>
           )}
         </Container>
