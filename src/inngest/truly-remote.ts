@@ -158,10 +158,9 @@ export const trulyRemoteCheck = inngest.createFunction(
         ].filter(({ listingId }) => !listingIds.has(listingId));
 
         return [
-          // newListings.filter(
-          //   ({ category }) => category.toLowerCase() === "development"
-          // ),
-          [], //for the moment we don't want any development news
+          newListings.filter(
+            ({ category }) => category.toLowerCase() === "development"
+          ),
           newListings.filter(
             ({ category }) => category.toLowerCase() === "marketing"
           ),
